@@ -51,7 +51,7 @@ def get_lexem_sarcasm_lvl(sarcastic_lex, non_sarcastic_lex):
 
     sarcasm_lvl = {}
     for key in sarcastic_lex.keys():
-        key = key.lower()
+        key = key
         try:
             pSar = sarcastic_lex[key] / n_sarc
             pNonSar = non_sarcastic_lex[key] / n_non_sarc
@@ -61,7 +61,7 @@ def get_lexem_sarcasm_lvl(sarcastic_lex, non_sarcastic_lex):
             sarcasm_lvl[key] = 0.99
 
     for key in non_sarcastic_lex.keys():
-        key = key.lower()
+        key = key
         try:
             sarcasm_lvl[key]
         except KeyError:
@@ -80,7 +80,7 @@ def get_lexem_sarcasm_lvl(sarcastic_lex, non_sarcastic_lex):
 def read_data(prep_data):
     with open(prep_data) as json_file:
         data = json.load(json_file)
-        mappedData = list(map(lambda p: Article(p['headline'], p['is_sarcastic'], p['article_link']), data['sarkazmas']))
+        mappedData = list(map(lambda p: Article(p['headline'].lower(), p['is_sarcastic'], p['article_link']), data['sarkazmas']))
         return mappedData
 
 def get_separated_articles(parsed_data):
@@ -109,7 +109,7 @@ def test_data(art, isSarc, lexem_sarcasm_lvl):
         for word in words:
             if word == '':
                 continue
-            word = word.lower()
+            word = word
             try:
                 x = lexem_sarcasm_lvl[word]
             except KeyError:
