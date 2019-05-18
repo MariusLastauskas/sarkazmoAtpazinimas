@@ -2,6 +2,7 @@ import json
 import re
 import operator
 from urllib.parse import urlparse
+import matplotlib.pyplot as plt
 
 RAW_DATA_FILE = 'Sarcasm_Headlines_Dataset.json'
 MODIFIED_DATA_FILE = 'sarcasm_prepaired.json'
@@ -107,25 +108,26 @@ def get_urls(articles):
     return urls
 
 def filter_lex(sarcastic_lex, not_sarcastic_lex, minimum_count):
-    return list(filter(lambda x: x[1] > minimum_count or x[0] in not_sarcastic_lex, sarcastic_lex.items())), list(filter(lambda x: x[1] > minimum_count or x[0] not in sarcastic_lex, not_sarcastic_lex.items()))
+    return dict(filter(lambda x: x[1] > minimum_count or x[0] in not_sarcastic_lex, sarcastic_lex.items())), dict(filter(lambda x: x[1] > minimum_count or x[0] in sarcastic_lex, not_sarcastic_lex.items()))
 
 if __name__ == '__main__':
     data_prep(RAW_DATA_FILE, MODIFIED_DATA_FILE)
     parsed_data = read_data(MODIFIED_DATA_FILE)
-    
+
     sarcastic_articles, not_sarcastic_articles = get_separated_articles(parsed_data)
     print(get_urls(sarcastic_articles))
     print(get_urls(not_sarcastic_articles))
 
     sarcastic_lex = get_lex(sarcastic_articles)
     not_sarcastic_lex = get_lex(not_sarcastic_articles)
-    
+
     #Duomenu pasifiltravimui, jei nenorima, jog labai mazo kiekio leksemos, esancios tik vienoje leksemu puseje, neisdarkytu rezultatu
-    #f_slex, f_nslex = filter_lex(sarcastic_lex, not_sarcastic_lex, 1)
-    #print(f_slex)
-    #print(f_nslex)
+    f_slex, f_nslex = filter_lex(sarcastic_lex, not_sarcastic_lex, 5)
+    print(f_slex)
+    print(f_nslex)
 
-    lexem_sarcasm_lvl = get_lexem_sarcasm_lvl(sarcastic_lex, not_sarcastic_lex)
-
-    lexem_sarcasm_lvl = sorted(lexem_sarcasm_lvl.items(), key=operator.itemgetter(1))
+    lexem_sarcasm_lvl = get_lexem_sarcasm_lvl(f_slex, f_nslex)
     print(lexem_sarcasm_lvl)
+
+    plt.scatter(list(lexem_sarcasm_lvl.keys())[-1000:], list(lexem_sarcasm_lvl.values())[-1000:])
+    plt.show()
