@@ -1,4 +1,8 @@
 import json
+import re
+
+RAW_DATA_FILE = 'Sarcasm_Headlines_Dataset.json'
+MODIFIED_DATA_FILE = 'sarcasm_prepaired.json'
 
 class Article:
     def __init__(self, headline, is_sarcastic):
@@ -7,6 +11,8 @@ class Article:
 
     def __str__(self):
         return "Sarcastic: {0}, Headline: {1}".format(self.is_sarcastic, self.headline)
+
+    __repr__ = __str__
 
 def data_prep(dir_path, exit_path):
     open(exit_path, 'w').close()
@@ -29,12 +35,37 @@ def data_prep(dir_path, exit_path):
     fout.close()
     fin.close()
 
-if __name__ == '__main__':
-    raw_data = 'Sarcasm_Headlines_Dataset.json'
-    prep_data = 'sarcasm_prepaired.json'
-    data_prep(raw_data, prep_data)
+def read_data(prep_data):
     with open(prep_data) as json_file:
         data = json.load(json_file)
-        for p in data['sarkazmas']:
-            d = Article(p['headline'], p['is_sarcastic'])
-            print(d)
+        mappedData = list(map(lambda p: Article(p['headline'], p['is_sarcastic']), data['sarkazmas']))
+        return mappedData
+
+def get_filtered_articles(parsed_data):
+    return list(filter(lambda x: x.is_sarcastic == 1, parsed_data)), list(filter(lambda x: x.is_sarcastic == 0, parsed_data))
+
+def get_lex(articles):
+    lex = dict()
+    
+    for article in articles:
+        words = re.split(r'\W+', article.headline)
+
+        for word in words:
+            if word in lex:
+                lex[word] += 1
+            else:
+                lex[word] = 1
+
+    return lex
+
+if __name__ == '__main__':
+    data_prep(RAW_DATA_FILE, MODIFIED_DATA_FILE)
+    parsed_data = read_data(MODIFIED_DATA_FILE)
+    
+    sarcastic_articles, not_sarcastic_articles = get_filtered_articles(parsed_data)
+
+    sarcastic_lex = get_lex(sarcastic_articles)
+    not_sarcastic_lex = get_lex(not_sarcastic_articles)
+
+    print(sarcastic_lex)
+    print(not_sarcastic_lex)
