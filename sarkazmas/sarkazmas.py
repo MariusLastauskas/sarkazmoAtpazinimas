@@ -1,13 +1,15 @@
 import json
 import re
+from urllib.parse import urlparse
 
 RAW_DATA_FILE = 'Sarcasm_Headlines_Dataset.json'
 MODIFIED_DATA_FILE = 'sarcasm_prepaired.json'
 
 class Article:
-    def __init__(self, headline, is_sarcastic):
+    def __init__(self, headline, is_sarcastic, article_link):
         self.headline = headline
         self.is_sarcastic = is_sarcastic
+        self.article_link = urlparse(article_link).netloc
 
     def __str__(self):
         return "Sarcastic: {0}, Headline: {1}".format(self.is_sarcastic, self.headline)
@@ -38,7 +40,7 @@ def data_prep(dir_path, exit_path):
 def read_data(prep_data):
     with open(prep_data) as json_file:
         data = json.load(json_file)
-        mappedData = list(map(lambda p: Article(p['headline'], p['is_sarcastic']), data['sarkazmas']))
+        mappedData = list(map(lambda p: Article(p['headline'], p['is_sarcastic'], p['article_link']), data['sarkazmas']))
         return mappedData
 
 def get_filtered_articles(parsed_data):
@@ -58,11 +60,24 @@ def get_lex(articles):
 
     return lex
 
+def get_urls(articles):
+    urls = dict()
+    
+    for article in articles:    
+        if article.article_link in urls:
+            urls[article.article_link] += 1
+        else:
+            urls[article.article_link] = 1
+
+    return urls
+
 if __name__ == '__main__':
     data_prep(RAW_DATA_FILE, MODIFIED_DATA_FILE)
     parsed_data = read_data(MODIFIED_DATA_FILE)
     
     sarcastic_articles, not_sarcastic_articles = get_filtered_articles(parsed_data)
+    print(get_urls(sarcastic_articles))
+    print(get_urls(not_sarcastic_articles))
 
     sarcastic_lex = get_lex(sarcastic_articles)
     not_sarcastic_lex = get_lex(not_sarcastic_articles)
