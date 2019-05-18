@@ -66,8 +66,6 @@ fabric.properties
 
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
-<<<<<<< Updated upstream
-=======
 sarkazmas/env/Lib/site-packages/__pycache__/
 
 sarkazmas/env/Lib/site-packages/astroid-2\.2\.5\.dist-info/
@@ -80,5 +78,4 @@ sarkazmas/env/Lib/site-packages/colorama-0\.4\.1\.dist-info/
 
 sarkazmas/env/Lib/site-packages/colorama/
 
->>>>>>> Stashed changes
 sarkazmas/env/
