@@ -1,5 +1,6 @@
 import json
 import re
+import operator
 from urllib.parse import urlparse
 
 RAW_DATA_FILE = 'Sarcasm_Headlines_Dataset.json'
@@ -36,6 +37,40 @@ def data_prep(dir_path, exit_path):
 
     fout.close()
     fin.close()
+
+def get_lexem_sarcasm_lvl(sarcastic_lex, non_sarcastic_lex):
+    n_sarc = 0
+    n_non_sarc = 0
+    for value in sarcastic_lex.values():
+        n_sarc = n_sarc + value
+    for value in non_sarcastic_lex.values():
+        n_non_sarc = n_non_sarc + value
+
+    sarcasm_lvl = {}
+    for key in sarcastic_lex.keys():
+        try:
+            pSar = sarcastic_lex[key] / n_sarc
+            pNonSar = non_sarcastic_lex[key] / n_non_sarc
+            p = pSar / (pSar + pNonSar)
+            sarcasm_lvl[key] = p
+        except KeyError:
+            sarcasm_lvl[key] = 0.99
+
+    for key in non_sarcastic_lex.keys():
+        try:
+            sarcasm_lvl[key]
+        except KeyError:
+            try:
+                pSar = sarcastic_lex[key] / n_sarc
+                pNonSar = sarcastic_lex[key] / n_non_sarc
+                p = pSar / (pSar + pNonSar)
+                sarcasm_lvl[key] = p
+            except KeyError:
+                sarcasm_lvl[key] = 0.01
+        except TypeError:
+            continue
+
+    return sarcasm_lvl
 
 def read_data(prep_data):
     with open(prep_data) as json_file:
@@ -82,5 +117,7 @@ if __name__ == '__main__':
     sarcastic_lex = get_lex(sarcastic_articles)
     not_sarcastic_lex = get_lex(not_sarcastic_articles)
 
-    print(sarcastic_lex)
-    print(not_sarcastic_lex)
+    lexem_sarcasm_lvl = get_lexem_sarcasm_lvl(sarcastic_lex, not_sarcastic_lex)
+
+    lexem_sarcasm_lvl = sorted(lexem_sarcasm_lvl.items(), key=operator.itemgetter(1))
+    print(lexem_sarcasm_lvl)
