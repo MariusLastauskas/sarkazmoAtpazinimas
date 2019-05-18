@@ -54,6 +54,7 @@ def get_lexem_sarcasm_lvl(sarcastic_lex, non_sarcastic_lex):
 
     sarcasm_lvl = {}
     for key in sarcastic_lex.keys():
+        key = key.lower()
         try:
             pSar = sarcastic_lex[key] / n_sarc
             pNonSar = non_sarcastic_lex[key] / n_non_sarc
@@ -63,6 +64,7 @@ def get_lexem_sarcasm_lvl(sarcastic_lex, non_sarcastic_lex):
             sarcasm_lvl[key] = 0.99
 
     for key in non_sarcastic_lex.keys():
+        key = key.lower()
         try:
             sarcasm_lvl[key]
         except KeyError:
@@ -77,10 +79,6 @@ def get_lexem_sarcasm_lvl(sarcastic_lex, non_sarcastic_lex):
             continue
 
     return sarcasm_lvl
-
-# def test_sarcasm(sarcastic_articles, non_sarcastic_articles):
-#
-#     for i in range(n_cross_validation):
 
 def read_data(prep_data):
     with open(prep_data) as json_file:
@@ -105,16 +103,69 @@ def get_lex(articles):
 
     return lex
 
+def test_data(art, isSarc, lexem_sarcasm_lvl):
+    correct = 0
+
+    for art in art:
+        art_words_sarc = {}
+        words = get_lex({art})
+        for word in words:
+            if word == '':
+                continue
+            word = word.lower()
+            try:
+                x = lexem_sarcasm_lvl[word]
+            except KeyError:
+                x = 0.4
+            x = abs(x - 0.5)
+            art_words_sarc[word] = x
+
+        art_words_sarc = sorted(art_words_sarc.items(), key=operator.itemgetter(1))
+        art_words_sarc.reverse()
+
+        n = min(lexem_count, len(art_words_sarc))
+        j = 0
+        pp1 = 1
+        pp2 = 2
+
+        for key in art_words_sarc:
+            if j >= n:
+                break
+            try:
+                sarcLvl = lexem_sarcasm_lvl[key[0]]
+            except KeyError:
+                sarcLvl = 0.4
+            pp1 = pp1 * sarcLvl
+            pp2 = pp2 * (1 - sarcLvl)
+            j = j + 1
+        pp2 = pp2 + pp1
+        p = pp1 / pp2
+        if isSarc == 1:
+            if p >= sarcasm_border:
+                correct = correct + 1
+        else:
+            if p < sarcasm_border:
+                correct = correct + 1
+    return correct
+
+# def chunks(data, s)
+
 if __name__ == '__main__':
     data_prep(RAW_DATA_FILE, MODIFIED_DATA_FILE)
     parsed_data = read_data(MODIFIED_DATA_FILE)
-    
-    sarcastic_articles, not_sarcastic_articles = get_filtered_articles(parsed_data)
+    lexem_count = 10
+    sarcasm_border = 0.7
+
+    sarcastic_articles, not_sarcastic_articles = get_filtered_articles(parsed_data[:len(parsed_data * 9)//10])
 
     sarcastic_lex = get_lex(sarcastic_articles)
     not_sarcastic_lex = get_lex(not_sarcastic_articles)
 
     lexem_sarcasm_lvl = get_lexem_sarcasm_lvl(sarcastic_lex, not_sarcastic_lex)
 
-    lexem_sarcasm_lvl = sorted(lexem_sarcasm_lvl.items(), key=operator.itemgetter(1))
-    print(lexem_sarcasm_lvl)
+    # lexem_sarcasm_lvl = sorted(lexem_sarcasm_lvl.items(), key=operator.itemgetter(1))
+
+    sarcastic_test_data , not_sarcastic_test_data = get_filtered_articles(parsed_data[len(parsed_data * 9)//10:])
+
+    print(test_data(sarcastic_test_data, 1, lexem_sarcasm_lvl) / (len(parsed_data) / 10))
+    print(test_data(not_sarcastic_test_data, 0, lexem_sarcasm_lvl) / (len(parsed_data) / 10))
