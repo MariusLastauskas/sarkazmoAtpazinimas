@@ -106,6 +106,9 @@ def get_urls(articles):
 
     return urls
 
+def filter_lex(sarcastic_lex, not_sarcastic_lex, minimum_count):
+    return list(filter(lambda x: x[1] > minimum_count or x[0] in not_sarcastic_lex, sarcastic_lex.items())), list(filter(lambda x: x[1] > minimum_count or x[0] not in sarcastic_lex, not_sarcastic_lex.items()))
+
 if __name__ == '__main__':
     data_prep(RAW_DATA_FILE, MODIFIED_DATA_FILE)
     parsed_data = read_data(MODIFIED_DATA_FILE)
@@ -116,6 +119,11 @@ if __name__ == '__main__':
 
     sarcastic_lex = get_lex(sarcastic_articles)
     not_sarcastic_lex = get_lex(not_sarcastic_articles)
+    
+    #Duomenu pasifiltravimui, jei nenorima, jog labai mazo kiekio leksemos, esancios tik vienoje leksemu puseje, neisdarkytu rezultatu
+    #f_slex, f_nslex = filter_lex(sarcastic_lex, not_sarcastic_lex, 1)
+    #print(f_slex)
+    #print(f_nslex)
 
     lexem_sarcasm_lvl = get_lexem_sarcasm_lvl(sarcastic_lex, not_sarcastic_lex)
 
