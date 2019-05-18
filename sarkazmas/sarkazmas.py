@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 
 RAW_DATA_FILE = 'Sarcasm_Headlines_Dataset.json'
 MODIFIED_DATA_FILE = 'sarcasm_prepaired.json'
+LEXEM_COUNT = 10
+SARCASM_BORDER = 0.5
 
 class Article:
     def __init__(self, headline, is_sarcastic, article_link):
@@ -118,7 +120,7 @@ def test_data(art, isSarc, lexem_sarcasm_lvl):
         art_words_sarc = sorted(art_words_sarc.items(), key=operator.itemgetter(1))
         art_words_sarc.reverse()
 
-        n = min(lexem_count, len(art_words_sarc))
+        n = min(LEXEM_COUNT, len(art_words_sarc))
         j = 0
         pp1 = 1
         pp2 = 2
@@ -136,10 +138,10 @@ def test_data(art, isSarc, lexem_sarcasm_lvl):
         pp2 = pp2 + pp1
         p = pp1 / pp2
         if isSarc == 1:
-            if p >= sarcasm_border:
+            if p >= SARCASM_BORDER:
                 correct = correct + 1
         else:
-            if p < sarcasm_border:
+            if p < SARCASM_BORDER:
                 correct = correct + 1
     return correct
 
@@ -160,8 +162,6 @@ def filter_lex(sarcastic_lex, not_sarcastic_lex, minimum_count):
 if __name__ == '__main__':
     data_prep(RAW_DATA_FILE, MODIFIED_DATA_FILE)
     parsed_data = read_data(MODIFIED_DATA_FILE)
-    lexem_count = 10
-    sarcasm_border = 0.7
 
     sarcastic_articles, not_sarcastic_articles = get_separated_articles(parsed_data[:len(parsed_data * 9)//10])
 
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     not_sarcastic_lex = get_lex(not_sarcastic_articles)
 
     #Duomenu pasifiltravimui, jei nenorima, jog labai mazo kiekio leksemos, esancios tik vienoje leksemu puseje, neisdarkytu rezultatu
-    f_slex, f_nslex = filter_lex(sarcastic_lex, not_sarcastic_lex, 5)
+    f_slex, f_nslex = filter_lex(sarcastic_lex, not_sarcastic_lex, 0)
     print(f_slex)
     print(f_nslex)
 
@@ -182,9 +182,11 @@ if __name__ == '__main__':
 
     # lexem_sarcasm_lvl = sorted(lexem_sarcasm_lvl.items(), key=operator.itemgetter(1))
 
-    sarcastic_test_data , not_sarcastic_test_data = get_separated_articles(parsed_data[len(parsed_data * 9)//10:])
+    sarcastic_test_data, not_sarcastic_test_data = get_separated_articles(parsed_data[len(parsed_data * 9)//10:])
 
-    print(test_data(sarcastic_test_data, 1, lexem_sarcasm_lvl) / (len(parsed_data) / 10))
-    print(test_data(not_sarcastic_test_data, 0, lexem_sarcasm_lvl) / (len(parsed_data) / 10))
-    plt.scatter(list(lexem_sarcasm_lvl.keys())[-1000:], list(lexem_sarcasm_lvl.values())[-1000:])
-    plt.show()
+    x = test_data(sarcastic_test_data, 1, lexem_sarcasm_lvl)
+    y = (len(parsed_data) / 10)
+    print(test_data(sarcastic_test_data, 1, lexem_sarcasm_lvl) / len(sarcastic_test_data))
+    print(test_data(not_sarcastic_test_data, 0, lexem_sarcasm_lvl) / len(not_sarcastic_test_data))
+    # plt.scatter(list(lexem_sarcasm_lvl.keys())[-1000:], list(lexem_sarcasm_lvl.values())[-1000:])
+    # plt.show()
