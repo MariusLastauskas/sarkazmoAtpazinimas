@@ -1,27 +1,22 @@
 import json
 import re
 import operator
+from urllib.parse import urlparse
+import matplotlib.pyplot as plt
 
 RAW_DATA_FILE = 'Sarcasm_Headlines_Dataset.json'
 MODIFIED_DATA_FILE = 'sarcasm_prepaired.json'
 
 class Article:
-    def __init__(self, headline, is_sarcastic):
+    def __init__(self, headline, is_sarcastic, article_link):
         self.headline = headline
         self.is_sarcastic = is_sarcastic
+        self.article_link = urlparse(article_link).netloc
 
     def __str__(self):
         return "Sarcastic: {0}, Headline: {1}".format(self.is_sarcastic, self.headline)
 
     __repr__ = __str__
-
-class Article:
-    def __init__(self, headline, is_sarcastic):
-        self.headline = headline
-        self.is_sarcastic = is_sarcastic
-
-    def __str__(self):
-        return "Sarcastic: {0}, Headline: {1}".format(self.is_sarcastic, self.headline)
 
 def data_prep(dir_path, exit_path):
     open(exit_path, 'w').close()
@@ -83,10 +78,10 @@ def get_lexem_sarcasm_lvl(sarcastic_lex, non_sarcastic_lex):
 def read_data(prep_data):
     with open(prep_data) as json_file:
         data = json.load(json_file)
-        mappedData = list(map(lambda p: Article(p['headline'], p['is_sarcastic']), data['sarkazmas']))
+        mappedData = list(map(lambda p: Article(p['headline'], p['is_sarcastic'], p['article_link']), data['sarkazmas']))
         return mappedData
 
-def get_filtered_articles(parsed_data):
+def get_separated_articles(parsed_data):
     return list(filter(lambda x: x.is_sarcastic == 1, parsed_data)), list(filter(lambda x: x.is_sarcastic == 0, parsed_data))
 
 def get_lex(articles):
@@ -148,7 +143,19 @@ def test_data(art, isSarc, lexem_sarcasm_lvl):
                 correct = correct + 1
     return correct
 
-# def chunks(data, s)
+def get_urls(articles):
+    urls = dict()
+    
+    for article in articles:    
+        if article.article_link in urls:
+            urls[article.article_link] += 1
+        else:
+            urls[article.article_link] = 1
+
+    return urls
+
+def filter_lex(sarcastic_lex, not_sarcastic_lex, minimum_count):
+    return dict(filter(lambda x: x[1] > minimum_count or x[0] in not_sarcastic_lex, sarcastic_lex.items())), dict(filter(lambda x: x[1] > minimum_count or x[0] in sarcastic_lex, not_sarcastic_lex.items()))
 
 if __name__ == '__main__':
     data_prep(RAW_DATA_FILE, MODIFIED_DATA_FILE)
@@ -156,16 +163,28 @@ if __name__ == '__main__':
     lexem_count = 10
     sarcasm_border = 0.7
 
-    sarcastic_articles, not_sarcastic_articles = get_filtered_articles(parsed_data[:len(parsed_data * 9)//10])
+    sarcastic_articles, not_sarcastic_articles = get_separated_articles(parsed_data[:len(parsed_data * 9)//10])
+
+    sarcastic_articles, not_sarcastic_articles = get_separated_articles(parsed_data)
+    print(get_urls(sarcastic_articles))
+    print(get_urls(not_sarcastic_articles))
 
     sarcastic_lex = get_lex(sarcastic_articles)
     not_sarcastic_lex = get_lex(not_sarcastic_articles)
 
-    lexem_sarcasm_lvl = get_lexem_sarcasm_lvl(sarcastic_lex, not_sarcastic_lex)
+    #Duomenu pasifiltravimui, jei nenorima, jog labai mazo kiekio leksemos, esancios tik vienoje leksemu puseje, neisdarkytu rezultatu
+    f_slex, f_nslex = filter_lex(sarcastic_lex, not_sarcastic_lex, 5)
+    print(f_slex)
+    print(f_nslex)
+
+    lexem_sarcasm_lvl = get_lexem_sarcasm_lvl(f_slex, f_nslex)
+    print(lexem_sarcasm_lvl)
 
     # lexem_sarcasm_lvl = sorted(lexem_sarcasm_lvl.items(), key=operator.itemgetter(1))
 
-    sarcastic_test_data , not_sarcastic_test_data = get_filtered_articles(parsed_data[len(parsed_data * 9)//10:])
+    sarcastic_test_data , not_sarcastic_test_data = get_separated_articles(parsed_data[len(parsed_data * 9)//10:])
 
     print(test_data(sarcastic_test_data, 1, lexem_sarcasm_lvl) / (len(parsed_data) / 10))
     print(test_data(not_sarcastic_test_data, 0, lexem_sarcasm_lvl) / (len(parsed_data) / 10))
+    plt.scatter(list(lexem_sarcasm_lvl.keys())[-1000:], list(lexem_sarcasm_lvl.values())[-1000:])
+    plt.show()
