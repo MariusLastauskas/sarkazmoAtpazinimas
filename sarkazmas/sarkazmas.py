@@ -176,27 +176,23 @@ if __name__ == '__main__':
     data_prep(RAW_DATA_FILE, MODIFIED_DATA_FILE)
     parsed_data = read_data(MODIFIED_DATA_FILE)
 
-    sarcastic_articles, not_sarcastic_articles = get_separated_articles(parsed_data[:len(parsed_data) * 9 // 10])
+    sectionSize = 20
 
-    print(get_urls(sarcastic_articles))
-    print(get_urls(not_sarcastic_articles))
+    for x in range(sectionSize):
+        sarcastic_articles, not_sarcastic_articles = get_separated_articles(parsed_data[:len(parsed_data) * x // sectionSize] + parsed_data[len(parsed_data) * (x + 1) // sectionSize :])
 
-    sarcastic_lex = get_lex(sarcastic_articles)
-    not_sarcastic_lex = get_lex(not_sarcastic_articles)
+        sarcastic_lex = get_lex(sarcastic_articles)
+        not_sarcastic_lex = get_lex(not_sarcastic_articles)
 
-    # Duomenu pasifiltravimui, jei nenorima, jog labai mazo kiekio leksemos, esancios tik vienoje leksemu puseje, neisdarkytu rezultatu
-    f_slex, f_nslex = filter_lex(sarcastic_lex, not_sarcastic_lex, 1)
-    print(f_slex)
-    print(f_nslex)
+        # Duomenu pasifiltravimui, jei nenorima, jog labai mazo kiekio leksemos, esancios tik vienoje leksemu puseje, neisdarkytu rezultatu
+        f_slex, f_nslex = filter_lex(sarcastic_lex, not_sarcastic_lex, 1)
 
-    lexem_sarcasm_lvl = get_lexem_sarcasm_lvl(f_slex, f_nslex)
-    print(lexem_sarcasm_lvl)
+        lexem_sarcasm_lvl = get_lexem_sarcasm_lvl(f_slex, f_nslex)
+        # lexem_sarcasm_lvl = sorted(lexem_sarcasm_lvl.items(), key=operator.itemgetter(1))
+    
+        sarcastic_test_data, not_sarcastic_test_data = get_separated_articles(parsed_data[len(parsed_data) * x // sectionSize : len(parsed_data) * (x + 1) // sectionSize])
 
-    # lexem_sarcasm_lvl = sorted(lexem_sarcasm_lvl.items(), key=operator.itemgetter(1))
-
-    sarcastic_test_data, not_sarcastic_test_data = get_separated_articles(parsed_data[len(parsed_data) * 9 // 10:])
-
-    print(test_data(sarcastic_test_data, 1, lexem_sarcasm_lvl) / len(sarcastic_test_data))
-    print(test_data(not_sarcastic_test_data, 0, lexem_sarcasm_lvl) / len(not_sarcastic_test_data))
-    # plt.scatter(list(lexem_sarcasm_lvl.keys())[-1000:], list(lexem_sarcasm_lvl.values())[-1000:])
-    # plt.show()
+        print(test_data(sarcastic_test_data, 1, lexem_sarcasm_lvl) / len(sarcastic_test_data))
+        print(test_data(not_sarcastic_test_data, 0, lexem_sarcasm_lvl) / len(not_sarcastic_test_data))
+        # plt.scatter(list(lexem_sarcasm_lvl.keys())[-1000:], list(lexem_sarcasm_lvl.values())[-1000:])
+        # plt.show()
