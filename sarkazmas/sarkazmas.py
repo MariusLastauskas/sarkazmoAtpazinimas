@@ -29,11 +29,12 @@ def data_prep(dir_path, exit_path):
     fout.close()
     fin.close()
 
-raw_data = 'Sarcasm_Headlines_Dataset.json'
-prep_data = 'sarcasm_prepaired.json'
-data_prep(raw_data, prep_data)
-with open(prep_data) as json_file:
-    data = json.load(json_file)
-    for p in data['sarkazmas']:
-        d = Article(p['headline'], p['is_sarcastic'])
-        print(d)
+if __name__ == '__main__':
+    raw_data = 'Sarcasm_Headlines_Dataset.json'
+    prep_data = 'sarcasm_prepaired.json'
+    data_prep(raw_data, prep_data)
+    with open(prep_data) as json_file:
+        data = json.load(json_file)
+        for p in data['sarkazmas']:
+            d = Article(p['headline'], p['is_sarcastic'])
+            print(d)
