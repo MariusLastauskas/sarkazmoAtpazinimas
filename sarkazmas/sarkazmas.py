@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 
 RAW_DATA_FILE = 'Sarcasm_Headlines_Dataset.json'
 MODIFIED_DATA_FILE = 'sarcasm_prepaired.json'
-LEXEM_COUNT = 20
+LEXEM_COUNT = 5
+MINIMUM_OCCURENCEC = 7
 SARCASM_BORDER = 0.5
 
 
@@ -185,7 +186,7 @@ if __name__ == '__main__':
     not_sarcastic_lex = get_lex(not_sarcastic_articles)
 
     # Duomenu pasifiltravimui, jei nenorima, jog labai mazo kiekio leksemos, esancios tik vienoje leksemu puseje, neisdarkytu rezultatu
-    f_slex, f_nslex = filter_lex(sarcastic_lex, not_sarcastic_lex, 1)
+    f_slex, f_nslex = filter_lex(sarcastic_lex, not_sarcastic_lex, MINIMUM_OCCURENCEC)
     print(f_slex)
     print(f_nslex)
 
