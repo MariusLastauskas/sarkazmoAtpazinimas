@@ -78,7 +78,7 @@ def read_data(prep_data):
         mappedData = list(map(lambda p: Article(p['headline'], p['is_sarcastic'], p['article_link']), data['sarkazmas']))
         return mappedData
 
-def get_filtered_articles(parsed_data):
+def get_separated_articles(parsed_data):
     return list(filter(lambda x: x.is_sarcastic == 1, parsed_data)), list(filter(lambda x: x.is_sarcastic == 0, parsed_data))
 
 def get_lex(articles):
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     data_prep(RAW_DATA_FILE, MODIFIED_DATA_FILE)
     parsed_data = read_data(MODIFIED_DATA_FILE)
     
-    sarcastic_articles, not_sarcastic_articles = get_filtered_articles(parsed_data)
+    sarcastic_articles, not_sarcastic_articles = get_separated_articles(parsed_data)
     print(get_urls(sarcastic_articles))
     print(get_urls(not_sarcastic_articles))
 
