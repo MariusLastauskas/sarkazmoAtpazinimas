@@ -4,14 +4,24 @@ import operator
 from urllib.parse import urlparse
 import matplotlib.pyplot as plt
 import random
+import numpy as np  
+import re  
+import nltk  
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn import model_selection, naive_bayes, svm
+from sklearn.metrics import accuracy_score
+from sklearn import linear_model
 
 RAW_DATA_FILE = 'Sarcasm_Headlines_Dataset.json'
 MODIFIED_DATA_FILE = 'sarcasm_prepaired.json'
 LEXEM_COUNT = 5
 MINIMUM_OCCURENCEC = 2
 SARCASM_BORDER = 0.2
-SECTION_SIZE = 2
+SECTION_SIZE = 5
 FILTRATIONS_COUNT = 1
+
 
 
 class Article:
@@ -22,6 +32,9 @@ class Article:
 
     def __str__(self):
         return "Sarcastic: {0}, Headline: {1}".format(self.is_sarcastic, self.headline)
+
+    def getWords(self):
+        return re.split(r'\W+', self.headline)
 
     __repr__ = __str__
 
@@ -195,11 +208,13 @@ def filter_training_data(art, isSarc, sarcasm_lvl):
 
 def build_word_map(data):
     output = {}
+    id_count = {}
     i = 0
     for lex in data:
+        id_count[i] = data[lex]
         output[lex] = i
         i = i + 1
-    return output
+    return output, id_count
 
 def build_embedding_matrix(data, dim):
     output = {}
@@ -416,7 +431,52 @@ def nn_train(data, word_map):
 
     return WhStable, WoStable, bo, bh, n_hidden_neurons
 
+def get_SGD_Matrix_and_Results(sarcastic_articles, not_sarcastic_articles):
+    sarcastic_lex = get_lex(sarcastic_articles)
+    not_sarcastic_lex = get_lex(not_sarcastic_articles)
+    f_slex, f_nslex = filter_lex(sarcastic_lex, not_sarcastic_lex, MINIMUM_OCCURENCEC)
+    lexem_sarcasm_lvl = get_lexem_sarcasm_lvl(f_slex, f_nslex)
+    filter_training_data(sarcastic_articles, 1, lexem_sarcasm_lvl)
+    filter_training_data(not_sarcastic_articles, 0, lexem_sarcasm_lvl)
 
+    word_map, id_count = build_word_map(lexem_sarcasm_lvl)
+    s = (len(sarcastic_articles) + len(not_sarcastic_articles), len(word_map))
+    matrix = np.zeros(s)
+    result = []
+    ind = 0
+    for article in sarcastic_articles:
+        words = article.getWords()
+        for word in words:
+            if (word in word_map):
+                matrix[ind, word_map[word]] = id_count[word_map[word]]
+        result.append(1)
+        ind = ind + 1
+
+    for article in not_sarcastic_articles:
+        words = article.getWords()
+        for word in words:
+            if (word in word_map):
+                matrix[ind, word_map[word]] = id_count[word_map[word]]
+        result.append(0)
+        ind = ind + 1
+    return matrix, result
+
+def SGD(sarcastic_articles, not_sarcastic_articles):
+    for x in range(SECTION_SIZE):
+        matrix, result = get_SGD_Matrix_and_Results(sarcastic_articles, not_sarcastic_articles)
+
+        learn_matrix = np.concatenate((matrix[:len(matrix) * x // SECTION_SIZE, :], matrix[len(matrix) * (x + 1) // SECTION_SIZE:, :]), axis=0)
+        learn_result = result[:len(result) * x // SECTION_SIZE] + result[len(result) * (x + 1) // SECTION_SIZE:]
+        test_matrix = matrix[len(matrix) * x // SECTION_SIZE:len(matrix) * (x + 1) // SECTION_SIZE, :]
+        test_result = result[len(result) * x // SECTION_SIZE:len(result) * (x + 1) // SECTION_SIZE]
+        # https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html#sklearn.linear_model.SGDClassifier 
+        # Linear classifier
+        clf = linear_model.SGDClassifier(max_iter=10000)
+        clf.fit(learn_matrix,learn_result)
+
+        predictions_SVM = clf.predict(test_matrix)
+
+        print("SGD Accuracy Score -> ",accuracy_score(predictions_SVM, test_result)*100) 
 
 
 if __name__ == '__main__':
@@ -424,34 +484,21 @@ if __name__ == '__main__':
     parsed_data = read_data(MODIFIED_DATA_FILE)
 
     i = 0
-    sarcasm_result = 0;
-    not_sarcasm_result = 0;
+    sarcasm_result = 0
+    not_sarcasm_result = 0
 
+    sgd_sarcastic_articles, sgd_not_sarcastic_articles = get_separated_articles(parsed_data)
+
+    SGD(sgd_sarcastic_articles, sgd_not_sarcastic_articles)
+      
     for x in range(SECTION_SIZE):
 
         sarcastic_articles, not_sarcastic_articles = get_separated_articles(
-            parsed_data[:len(parsed_data) * x // SECTION_SIZE] + parsed_data[
-                                                                 len(parsed_data) * (x + 1) // SECTION_SIZE:])
-        for j in range(FILTRATIONS_COUNT):
-            sarcastic_lex = get_lex(sarcastic_articles)
-            not_sarcastic_lex = get_lex(not_sarcastic_articles)
+            parsed_data[:len(parsed_data) * x // SECTION_SIZE] + parsed_data[len(parsed_data) * (x + 1) // SECTION_SIZE:])
+        test_sarcastic_articles, test_not_sarcastic_articles = get_separated_articles(parsed_data[len(parsed_data) * x // SECTION_SIZE:len(parsed_data) * (x + 1) // SECTION_SIZE])
 
-            # Duomenu pasifiltravimui, jei nenorima, jog labai mazo kiekio leksemos, esancios tik vienoje leksemu puseje, neisdarkytu rezultatu
-            f_slex, f_nslex = filter_lex(sarcastic_lex, not_sarcastic_lex, MINIMUM_OCCURENCEC)
-
-            lexem_sarcasm_lvl = get_lexem_sarcasm_lvl(f_slex, f_nslex)
-            filter_training_data(sarcastic_articles, 1, lexem_sarcasm_lvl)
-            filter_training_data(not_sarcastic_articles, 0, lexem_sarcasm_lvl)
-        sarcastic_test_data, not_sarcastic_test_data = get_separated_articles(parsed_data[len(parsed_data) * x // SECTION_SIZE : len(parsed_data) * (x + 1) // SECTION_SIZE])
-
-        word_map = build_word_map(lexem_sarcasm_lvl)
-        Wh, Wo, bo, bh, n_hidden_neurons = nn_train(parsed_data, word_map)
-        nn_sarcastic_test_results = nn_test_data(sarcastic_test_data, Wh, Wo, bh, bo, n_hidden_neurons, 1)
-        nn_not_sarcastic_test_results = nn_test_data(not_sarcastic_test_data, Wh, Wo, bh, bo, n_hidden_neurons, 0)
-        print(" ****** NN test " + str(i) + " ******* ")
-        print(nn_sarcastic_test_results)
-        print(nn_not_sarcastic_test_results)
-
+        print("Sarcasm detected at: " + str(sarcasm_result / SECTION_SIZE * 100) + "% rate")
+        print("Not sarcasm detected at: " + str(not_sarcasm_result / SECTION_SIZE * 100) + "% rate")
         # sarcasm_test_result = test_data(sarcastic_test_data, 1, lexem_sarcasm_lvl) / len(sarcastic_test_data)
         # sarcasm_result = sarcasm_result + sarcasm_test_result
         # not_sarcasm_test_result = test_data(not_sarcastic_test_data, 0, lexem_sarcasm_lvl) / len(not_sarcastic_test_data)
